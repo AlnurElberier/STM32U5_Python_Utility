@@ -14,27 +14,83 @@
 # ******************************************************************************
 
 import serial
+import io
 import serial.tools.list_ports
 import platform
 import string
 import os
 import time
+from time import monotonic
 from uuid import getnode as get_mac
 
-BOARD_NAMES = ["DIS_U585AI", "NOD_U585AI"]
+BOARD_NAMES = ["NODE_G071RB"]
 DEFAULT_BAUD = 115200
 HWID = "VID:PID=0483:374"
+TIMEOUT = 2.0
 
 
 
-class STM32U5:
+class STM32:
 
 
-    def __init__(self, baud=DEFAULT_BAUD):
-        self.port = self.get_com()
-        self.path = self.get_path()
+    def __init__(self, baud=DEFAULT_BAUD, board_names=BOARD_NAMES, port=None, path=None):
+        if port == None:
+            self.port = self.get_com()
+        if path == None:
+            self.path = self.get_path()
         self.baud = baud
         self.name = self.get_name()
+        self.ser = serial.Serial(self.port, baud, timeout=0.1, rtscts=False)
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
+        self.sio = io.BufferedRWPair(self.ser, self.ser)
+        self.sio._CHUNK_SIZE = 2
+        self.timeout = TIMEOUT
+        self.sync()
+
+
+    # Send Ctrl+c character to clear processes on board ####################################################################################################
+    def sync(self):
+        self.sio.write(b"\x03")
+        self.sio.flush()
+        self.read_response()
+
+
+    # Send a command to the board and return the response ####################################################################################################
+    def send_cmd_read_response(self, msg, timeout=TIMEOUT):
+        cmd = bytes(msg, encoding='utf-8')
+        cmdstr = cmd + b"\r\n"
+
+        self.sio.write(cmdstr)
+
+        self.sio.flush()
+
+        timeoutTime = monotonic() + timeout
+
+        cmd_readback = self.sio.readline()
+        while timeoutTime > monotonic():
+            cmd_readback += self.sio.readline()
+
+        return cmd_readback.decode('utf-8').strip('\r\n')
+
+
+
+    # Return the response of a board  ####################################################################################################
+    def read_response(self, timeout=TIMEOUT):
+        response = []
+
+        timeoutTime = monotonic() + timeout
+
+        while timeoutTime > monotonic():
+            line = self.sio.readline()
+
+            if len(line) == 0:
+                continue
+
+            response.append(line)
+
+        return response
+
 
     
 
@@ -105,9 +161,12 @@ class STM32U5:
 
     # Write a msg to board over serial port ###########################################################################################
     def serial_write(self, msg):
-        ser = serial.Serial(self.port, self.baud)
-        ser.write(bytes(msg))
-        ser.close()
+        cmd = bytes(msg, encoding='utf-8')
+        cmdstr = cmd + b"\r\n"
+
+        self.sio.write(cmdstr)
+
+        self.sio.flush()
 
 
 
@@ -166,4 +225,10 @@ class STM32U5:
         while (port.in_waiting <= bytesToRead):
             time.sleep(0.1)
 
-        port.close()
+def main():
+    g0 = STM32()
+    print(g0.send_cmd_read_response('AT+CONF? ThingName'))
+    print(g0.path, g0.port)
+
+if __name__ == "__main__":
+    main()
