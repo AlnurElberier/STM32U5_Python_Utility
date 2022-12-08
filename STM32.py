@@ -180,15 +180,23 @@ class STM32:
         for p in ports:
             if HWID in p.hwid:
                 mac = get_mac()
-                device_id = 'stm32u5-' + hex(mac)[-5:-1] + p.serial_number[-5:] + p.device[-2:]
+                device_id = 'stm32-' + hex(mac)[-5:-1] + p.serial_number[-5:] + p.device[-2:]
                 return device_id
         
         raise Exception("Port Error")
+    
+
+
+
+
+
+    # Set the name for the board based on given string ################################################################################
+    def set_name(self, name: str):
+        self.name = name.strip()
 
 
     
-    
-    
+        
     
     
     
@@ -224,11 +232,3 @@ class STM32:
         bytesToRead = port.in_waiting
         while (port.in_waiting <= bytesToRead):
             time.sleep(0.1)
-
-def main():
-    g0 = STM32()
-    print(g0.send_cmd_read_response('AT+CONF? ThingName'))
-    print(g0.path, g0.port)
-
-if __name__ == "__main__":
-    main()
