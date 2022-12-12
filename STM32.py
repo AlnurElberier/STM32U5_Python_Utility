@@ -22,11 +22,17 @@ import os
 import time
 from time import monotonic
 from uuid import getnode as get_mac
+import subprocess
 
-BOARD_NAMES = ["NODE_G071RB"]
+BOARD_NAMES = ["DIS_U585AI"]
 DEFAULT_BAUD = 115200
 HWID = "VID:PID=0483:374"
-TIMEOUT = 2.0
+TIMEOUT = 1.0
+
+RESET_PATH = ".\\STM32_Python_Utility\\CubeProgrammer\\Bat\\STM32CubeProg_Reset.bat"
+
+
+REVISION = '1.1.0'
 
 
 
@@ -59,9 +65,8 @@ class STM32:
     # Send a command to the board and return the response ####################################################################################################
     def send_cmd_read_response(self, msg, timeout=TIMEOUT):
         cmd = bytes(msg, encoding='utf-8')
-        cmdstr = cmd + b"\r\n"
 
-        self.sio.write(cmdstr)
+        self.sio.write(cmd)
 
         self.sio.flush()
 
@@ -90,6 +95,15 @@ class STM32:
             response.append(line)
 
         return response
+
+
+    # Return the response of a board  ####################################################################################################
+    def read_line(self, timeout=TIMEOUT):
+        timeoutTime = monotonic() + timeout
+
+        while timeoutTime > monotonic():
+            line = self.sio.readline().decode("utf-8", errors='ignore')
+            return line
 
 
     
@@ -142,13 +156,11 @@ class STM32:
 
     # Indefinitely read serial communication ########################################################################################
     def serial_read(self):
-        ser = serial.Serial(self.port, self.baud)
-
         #reading serial port indefinitely
         try:
             while True:
-                if ser.in_waiting > 0:
-                    print(ser.readline().decode("utf-8", errors='ignore'), end = '')
+                if self.ser.in_waiting > 0:
+                    print(self.ser.readline().decode("utf-8", errors='ignore'), end = '')
                     
                 else: 
                     time.sleep(1)
@@ -227,8 +239,32 @@ class STM32:
 
     # Wait for characters to come acroos the serial port #############################################################################
     def wait(self):
-        port = serial.Serial(self.port, self.baud)
-
-        bytesToRead = port.in_waiting
-        while (port.in_waiting <= bytesToRead):
+        bytesToRead = self.ser.in_waiting
+        while (self.ser.in_waiting <= bytesToRead):
             time.sleep(0.1)
+
+
+
+    # Wait for a prompt string to come across the serial port ########################################################################
+    def waitPrompt(self, prompt):
+        while 1: 
+            line = self.ser.readline().decode("utf-8", errors='ignore')           
+            if prompt in line:
+                time.sleep(0.5)
+                return
+
+
+    # Reset STM32 #####################################################################################################################
+    def reset(self):
+        self.cmd([RESET_PATH])
+
+
+    # Run path in command line and output it to output.txt if logging level is greater than debug #####################################
+    def cmd(self, path: list):
+        path.append('>>')
+        path.append('output.txt')
+        proc = subprocess.Popen(path)
+            
+
+        proc.communicate()
+        return proc.poll()
