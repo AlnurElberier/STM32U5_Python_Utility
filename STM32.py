@@ -30,7 +30,7 @@ HWID = "VID:PID=0483:374"
 TIMEOUT = 1.0
 
 RESET_PATH =      ".\\STM32_Python_Utility\\CubeProgrammer\\Bat\\STM32CubeProg_Reset.bat"
-REGRESSION_PATH = ".\\STM32_Python_Utility\\CubeProgrammer\\Bat\\regression.bat"
+REG_PATH = ".\\STM32_Python_Utility\\CubeProgrammer\\Bat\\regression.bat"
 TFM_UPDATE_PATH = ".\\STM32_Python_Utility\\CubeProgrammer\\Bat\\TFM_UPDATE.bat"
 
 
@@ -261,7 +261,7 @@ class STM32:
         self.cmd([RESET_PATH])
 
     # Set TFM Option Bytes ###########################################################################################################
-    def regression(self, scriptPath=REGRESSION_PATH):
+    def regression(self, scriptPath=REG_PATH):
         self.cmd([scriptPath])
 
     
