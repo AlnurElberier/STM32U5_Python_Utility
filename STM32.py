@@ -29,7 +29,9 @@ DEFAULT_BAUD = 115200
 HWID = "VID:PID=0483:374"
 TIMEOUT = 1.0
 
-RESET_PATH = ".\\STM32_Python_Utility\\CubeProgrammer\\Bat\\STM32CubeProg_Reset.bat"
+RESET_PATH =      ".\\STM32_Python_Utility\\CubeProgrammer\\Bat\\STM32CubeProg_Reset.bat"
+REGRESSION_PATH = ".\\STM32_Python_Utility\\CubeProgrammer\\Bat\\regression.bat"
+TFM_UPDATE_PATH = ".\\STM32_Python_Utility\\CubeProgrammer\\Bat\\TFM_UPDATE.bat"
 
 
 REVISION = '1.1.0'
@@ -258,6 +260,15 @@ class STM32:
     def reset(self):
         self.cmd([RESET_PATH])
 
+    # Set TFM Option Bytes ###########################################################################################################
+    def regression(self, scriptPath=REGRESSION_PATH):
+        self.cmd([scriptPath])
+
+    
+    # Flash TFM Binaries ##############################################################################################################
+    def tfmUpdate(self, scriptPath=TFM_UPDATE_PATH):
+        self.cmd([scriptPath])
+
 
     # Run path in command line and output it to output.txt if logging level is greater than debug #####################################
     def cmd(self, path: list):
@@ -268,3 +279,6 @@ class STM32:
 
         proc.communicate()
         return proc.poll()
+
+
+    
