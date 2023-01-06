@@ -24,7 +24,7 @@ from time import monotonic
 from uuid import getnode as get_mac
 import subprocess
 
-BOARD_NAMES = ["DIS_U585AI"]
+BOARD_NAMES = ["DIS_U585AI", "NODE_G071RB"]
 DEFAULT_BAUD = 115200
 HWID = "VID:PID=0483:374"
 TIMEOUT = 1.0
@@ -176,9 +176,8 @@ class STM32:
     # Write a msg to board over serial port ###########################################################################################
     def serial_write(self, msg):
         cmd = bytes(msg, encoding='utf-8')
-        cmdstr = cmd + b"\r\n"
 
-        self.sio.write(cmdstr)
+        self.sio.write(cmd)
 
         self.sio.flush()
 
