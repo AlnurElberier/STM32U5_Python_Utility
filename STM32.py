@@ -23,15 +23,15 @@ import time
 from time import monotonic
 from uuid import getnode as get_mac
 import subprocess
+import win32api
 
-BOARD_NAMES = ["DIS_U585AI", "NODE_G071RB"]
 DEFAULT_BAUD = 115200
 HWID = "VID:PID=0483:374"
 TIMEOUT = 1.0
 
-RESET_PATH =      ".\\STM32_Python_Utility\\CubeProgrammer\\Bat\\STM32CubeProg_Reset.bat"
-REG_PATH = ".\\STM32_Python_Utility\\CubeProgrammer\\Bat\\regression.bat"
-TFM_UPDATE_PATH = ".\\STM32_Python_Utility\\CubeProgrammer\\Bat\\TFM_UPDATE.bat"
+RESET_PATH =        ".\\STM32_Python_Utility\\CubeProgrammer\\Bat\\STM32CubeProg_Reset.bat"
+REG_PATH =          ".\\STM32_Python_Utility\\CubeProgrammer\\Bat\\regression.bat"
+TFM_UPDATE_PATH =   ".\\STM32_Python_Utility\\CubeProgrammer\\Bat\\TFM_UPDATE.bat"
 
 
 REVISION = '1.1.0'
@@ -41,7 +41,8 @@ REVISION = '1.1.0'
 class STM32:
 
 
-    def __init__(self, baud=DEFAULT_BAUD, board_names=BOARD_NAMES, port=None, path=None):
+    def __init__(self, drive_name=None, baud=DEFAULT_BAUD, port=None, path=None):
+        self.drive_name = drive_name
         if port == None:
             self.port = self.get_com()
         if path == None:
@@ -126,28 +127,29 @@ class STM32:
     def get_path(self):
         USBPATH = ''
         op_sys = platform.system()
-        if "windows" in op_sys.lower():
-            # Find drive letter
-            for l in string.ascii_uppercase:
-                if os.path.exists('%s:\\MBED.HTM' % l):
-                    USBPATH = '%s:\\' % l
-                    break
-            
-        elif "linux" in op_sys.lower():
-            user = os.getlogin()
-            for board in BOARD_NAMES:
-                temp_path = '/media/%s/%s/' % (user, board)
+        if self.drive_name:
+
+            if "windows" in op_sys.lower():
+                # Find drive letter
+                for l in string.ascii_uppercase:
+                    if os.path.exists('%s:\\MBED.HTM' % l):
+                        if self.drive_name.lower() in win32api.GetVolumeInformation(l+":\\")[0].lower():
+                            USBPATH = '%s:\\' % l
+                            break
+                
+            elif "linux" in op_sys.lower():
+                user = os.getlogin()
+                temp_path = '/media/%s/%s/' % (user, self.drive_name)
                 if os.path.exists(temp_path):
                     USBPATH = temp_path
-                    break
-        elif ("darwin" in op_sys.lower()) or ('mac' in op_sys.lower()): # Mac
-            for board in BOARD_NAMES:
-                    temp_path = '/Volumes/%s/' % board
-                    if os.path.exists(temp_path):
-                        USBPATH = temp_path
-                        break
-        else:
-            raise Exception ( ' OPERATING SYSTEM ERR ' )
+                    
+            elif ("darwin" in op_sys.lower()) or ('mac' in op_sys.lower()): # Mac
+                temp_path = '/Volumes/%s/' % self.drive_name
+                if os.path.exists(temp_path):
+                    USBPATH = temp_path
+                    
+            else:
+                raise Exception ( ' OPERATING SYSTEM ERR ' )
 
         if USBPATH == '':
             raise Exception ( ' BOARD NOT FOUND ERR ' )
