@@ -130,7 +130,6 @@ class STM32:
         if self.drive_name:
 
             if "windows" in op_sys.lower():
-                # Find drive letter
                 for l in string.ascii_uppercase:
                     if os.path.exists('%s:\\MBED.HTM' % l):
                         if self.drive_name.lower() in win32api.GetVolumeInformation(l+":\\")[0].lower():
